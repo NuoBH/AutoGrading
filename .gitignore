@@ -1,0 +1,15 @@
+tools/fanya/config.local.json
+tmp/
+
+# Task-specific grading artifacts and private/local data.
+result/
+rubrics/
+outputs/
+.agents/
+docs/handoff/
+docs/superpowers/
+
+# Local machine / editor noise.
+.DS_Store
+Thumbs.db
+*.log
