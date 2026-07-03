@@ -49,6 +49,7 @@ Do not create new result or rubric Markdown files. Workflow docs remain Markdown
 - `scripts/cleanup-reviewed-bundle.cjs`: deletes only the reviewed bundle zip and extracted work directory; never deletes `tmp/bundle/`.
 - `scripts/doctor.cjs`: checks local tools and project folders.
 - `scripts/init-config.cjs`: detects ffmpeg, ffprobe, 7-Zip, tar, and Poppler paths into local config.
+- `scripts/setup-environment.cjs`: first-run bootstrap helper; creates local workspace folders, runs environment checks, prints install guidance, and optionally installs Python packages when explicitly requested.
 
 ## Local Tool Notes
 

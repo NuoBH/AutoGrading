@@ -15,11 +15,11 @@ Follow the wizard output before opening browser pages, importing bundles, prepar
 If this is a freshly cloned repo, required local folders may not exist because runtime artifacts are gitignored. After the first wizard status check and before setup actions that write files, ensure the local workspace folders exist:
 
 ```powershell
-node tools/fanya/scripts/init-config.cjs
+node tools/fanya/scripts/setup-environment.cjs --prepare --check --print-install-guide
 node tools/fanya/scripts/doctor.cjs
 ```
 
-`init-config.cjs` creates `tmp/`, `tmp/bundle/`, `tmp/session/`, `rubrics/`, `result/`, and `outputs/` when missing. Do not create sample student indexes or placeholder result/rubric records just to satisfy setup gates.
+`setup-environment.cjs` creates `tmp/`, `tmp/bundle/`, `tmp/session/`, `rubrics/`, `result/`, and `outputs/` when missing and prints missing dependency guidance. Do not create sample student indexes or placeholder result/rubric records just to satisfy setup gates.
 
 When the user says `继续评阅`, `继续泛雅评阅`, `Resume Fanya review`, or `Continue Fanya grading`, treat it as a resume request. Read this workflow, run the wizard status check above, then run:
 
