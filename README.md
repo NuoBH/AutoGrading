@@ -56,15 +56,57 @@ tmp/       临时处理文件、抽帧图片、PDF 截图和会话状态
 
 ## 使用前准备
 
-目前适用于**Windows**系统；在使用这个工具前，请先确认本机已经准备好以下环境和材料。
+目前最推荐在 **Windows** 上使用。第一次下载仓库后，建议先在项目根目录运行：
 
-### 必要环境
+```powershell
+node tools/fanya/scripts/setup-environment.cjs
+```
 
-* **Git**：用于克隆这个仓库。
-* **Node.js / npm**：用于运行项目里的脚本和测试命令。
+它会安全地做三件事：
+
+1. 创建本地工作文件夹：`tmp/`、`tmp/bundle/`、`tmp/session/`、`rubrics/`、`result/`、`outputs/`；
+2. 检查本机是否能找到必要工具；
+3. 打印缺少依赖时的安装建议。
+
+默认情况下，它**不会自动安装系统软件**，也不会改你的浏览器登录状态。
+
+### 必须安装
+
+* **Node.js / npm**：运行本项目脚本需要。
+* **Chrome**：网页登录和网页批阅模式需要。
+* **browser-act**：当前工作流使用它进行浏览器导航、读取作业说明、抓取网页学生名单；因此是必需依赖。
 * **Codex / 支持本地文件操作的 agent 环境**：用于按照评阅流程读取作业、整理材料、生成评分标准、写入评阅记录和导出 Excel。
-* **浏览器**：如果使用网页批阅模式，需要能正常打开并登录泛雅 / 超星网页。
 * **泛雅 / 超星账号权限**：需要能够访问对应课程、作业和学生提交内容。
+
+### 推荐安装
+
+* **Git**：用于克隆和更新仓库；如果直接下载 ZIP，可以暂时不用。
+* **ffmpeg + ffprobe**：视频作业抽帧需要；`ffprobe` 可以让抽帧更准确。
+* **7-Zip**：处理 `.zip`、`.7z`、`.rar` 等压缩包更稳定。
+* **Poppler / pdftoppm**：把 PDF 页面渲染成图片需要。
+* **Python 3 + Pillow**：生成 PNG 版作品总览图需要。
+
+### 常用初始化命令
+
+只检查环境：
+
+```powershell
+node tools/fanya/scripts/doctor.cjs
+```
+
+只创建项目文件夹：
+
+```powershell
+node tools/fanya/scripts/setup-environment.cjs --prepare
+```
+
+安装 Python Pillow：
+
+```powershell
+node tools/fanya/scripts/setup-environment.cjs --install-python-packages
+```
+
+系统软件如 Node.js、Chrome、browser-act、ffmpeg、7-Zip、Poppler 不会被脚本自动静默安装。请按 `setup-environment.cjs` 打印的提示手动安装，或让 agent 在你确认后再执行安装命令。
 
 
 ## 获取这个Repo
@@ -452,63 +494,6 @@ workflows/fanya-homework-review.md
 ```powershell
 node --test .\tools\fanya\tests\*.test.cjs
 ```
-
-## 首次安装和环境检查（推荐）
-
-第一次下载这个仓库后，建议先在项目根目录运行：
-
-```powershell
-node tools/fanya/scripts/setup-environment.cjs
-```
-
-它会做三件安全的事：
-
-1. 创建本地工作文件夹：`tmp/`、`tmp/bundle/`、`tmp/session/`、`rubrics/`、`result/`、`outputs/`。
-2. 检查本机是否能找到常用工具。
-3. 打印缺少依赖时的安装建议。
-
-默认情况下，它**不会自动安装系统软件**，也不会改你的浏览器登录状态。
-
-### 必需环境
-
-- Windows：当前最推荐、测试最多的使用环境。
-- Git：用于下载和更新仓库。
-- Node.js / npm：用于运行本项目脚本。
-- Chrome：网页批阅模式需要真实浏览器登录。
-- Codex 或类似本地 agent：用于按流程读取材料、生成评分标准、写评语和导出结果。
-- 泛雅 / 超星账号权限：账号需要能访问对应课程、作业和学生提交。
-
-### 强烈推荐安装
-
-- `browser-act`：网页批阅模式需要它控制已登录浏览器。
-- `ffmpeg`：视频作业抽帧需要。
-- `ffprobe`：推荐和 ffmpeg 一起安装，用于按视频时长更准确地抽帧。
-- 7-Zip：处理 `.zip`、`.7z`、`.rar` 等压缩包更稳定。
-- Poppler / `pdftoppm`：把 PDF 页面渲染成图片需要。
-- Python 3：生成 PNG 预览图和部分辅助脚本需要。
-- Python Pillow：生成 PNG 版作品总览图需要。
-
-### 只检查环境
-
-```powershell
-node tools/fanya/scripts/doctor.cjs
-```
-
-### 只创建项目文件夹
-
-```powershell
-node tools/fanya/scripts/setup-environment.cjs --prepare
-```
-
-### 安装 Python Pillow
-
-如果已经安装 Python，可以运行：
-
-```powershell
-node tools/fanya/scripts/setup-environment.cjs --install-python-packages
-```
-
-系统软件如 ffmpeg、7-Zip、Poppler、Chrome、Node.js、browser-act 不会被脚本自动静默安装。请按 `setup-environment.cjs` 打印的提示手动安装，或让 agent 在你确认后再执行安装命令。
 
 ## English Summary
 

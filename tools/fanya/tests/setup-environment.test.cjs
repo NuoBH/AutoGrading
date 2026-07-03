@@ -34,6 +34,8 @@ test("runSetup prepare creates workspace directories", () => {
 test("install guide prints manual install commands without running them", () => {
   const lines = installGuide();
 
+  assert.ok(lines.some((line) => line === "Required:"));
+  assert.ok(lines.some((line) => line.includes("browser-act")));
   assert.ok(lines.some((line) => line.includes("winget install Gyan.FFmpeg")));
   assert.ok(lines.some((line) => line.includes("python -m pip install Pillow")));
 });

@@ -13,14 +13,16 @@ test("doctor reports core tools and impact guidance", () => {
       pdftoppmPath: "",
     },
     pythonCommand: "",
+    chromeCommand: "",
     browserActCommand: "",
     hasPillow: false,
   });
 
-  assert.ok(lines.some((line) => line.startsWith("OK node:")));
-  assert.ok(lines.some((line) => line.startsWith("MISSING ffmpeg:")));
-  assert.ok(lines.some((line) => line.startsWith("MISSING ffprobe:")));
-  assert.ok(lines.some((line) => line.startsWith("MISSING python:")));
-  assert.ok(lines.some((line) => line.startsWith("MISSING browser-act:")));
-  assert.ok(lines.some((line) => line.includes("missing ffmpeg/ffprobe limits video evidence")));
+  assert.ok(lines.some((line) => line.startsWith("OK REQUIRED node:")));
+  assert.ok(lines.some((line) => line.startsWith("MISSING REQUIRED Chrome:")));
+  assert.ok(lines.some((line) => line.startsWith("MISSING REQUIRED browser-act:")));
+  assert.ok(lines.some((line) => line.startsWith("MISSING RECOMMENDED ffmpeg:")));
+  assert.ok(lines.some((line) => line.startsWith("MISSING RECOMMENDED ffprobe:")));
+  assert.ok(lines.some((line) => line.startsWith("MISSING RECOMMENDED python:")));
+  assert.ok(lines.some((line) => line.includes("missing REQUIRED tools blocks normal workflow startup")));
 });
