@@ -116,15 +116,8 @@ node tools/fanya/scripts/setup-environment.cjs --install-python-packages
 在终端、PowerShell 或 Git Bash 中运行：
 
 ```bash
-git clone <你的仓库地址>
-cd <仓库文件夹名>
-```
-
-例如：
-
-```bash
-git clone https://github.com/your-name/your-repo.git
-cd your-repo
+git clone https://github.com/NuoBH/AutoGrading.git
+cd AutoGrading
 ```
 
 ### 方式二：直接下载 ZIP
