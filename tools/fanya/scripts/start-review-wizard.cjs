@@ -196,17 +196,25 @@ function needsCompletedSyncDecision(context) {
 }
 
 function readyToReview(context) {
-  const commands = [
-    `node tools/fanya/scripts/current-review-state.cjs --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}"`,
-  ];
+  const commands = [];
   if (context.reviewMode === "bundle_zip") {
+    const rubric = loadRecordIfPresent(context.rubricPath);
+    const reviewPriority = rubric?.reviewPriority || {};
+    const useContactSheet = isContactSheetSuitable(reviewPriority);
+    const useAssignmentText = isAssignmentTextBundleSuitable(reviewPriority);
     const contactSheetArgs = contactSheetArgsForRubric(context.rubricPath);
-    commands.unshift(
-      `node tools/fanya/scripts/prepare-bundle-evidence.cjs "<students-dir>" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --summary-only --json-out "<work-dir>/prepared-bundle-evidence.json"`,
-      `node tools/fanya/scripts/create-contact-sheet.cjs --students-dir "<students-dir>" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --out "<work-dir>/contact-sheet.svg" --map-out "<work-dir>/contact-sheet.json" --notes-out "tmp/session/contact-sheet-review-notes.json" --rubric-path "${context.rubricPath}"${contactSheetArgs ? ` ${contactSheetArgs}` : ""}`,
-      `node tools/fanya/scripts/promote-draft-reviews.cjs --result-path "${context.resultPath}" --assignment "${context.assignmentName}" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --notes-path "tmp/session/contact-sheet-review-notes.json" --dry-run`,
-    );
+    commands.push(`node tools/fanya/scripts/prepare-bundle-evidence.cjs "<students-dir>" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --summary-only --json-out "<work-dir>/prepared-bundle-evidence.json"`);
+    if (useAssignmentText) {
+      commands.push(`node tools/fanya/scripts/build-assignment-review-text.cjs --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --out "tmp/session/assignment-review-text.md" --index-out "tmp/session/assignment-review-text-index.json"`);
+    }
+    if (useContactSheet) {
+      commands.push(
+        `node tools/fanya/scripts/create-contact-sheet.cjs --students-dir "<students-dir>" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --out "<work-dir>/contact-sheet.svg" --map-out "<work-dir>/contact-sheet.json" --notes-out "tmp/session/contact-sheet-review-notes.json" --rubric-path "${context.rubricPath}"${contactSheetArgs ? ` ${contactSheetArgs}` : ""}`,
+      );
+    }
+    commands.push(`node tools/fanya/scripts/promote-draft-reviews.cjs --result-path "${context.resultPath}" --assignment "${context.assignmentName}" --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}" --notes-path "tmp/session/contact-sheet-review-notes.json" --dry-run`);
   }
+  commands.push(`node tools/fanya/scripts/current-review-state.cjs --session-path "${context.sessionPath || "tmp/session/fanya-current-task.json"}"`);
   return {
     ...base(context),
     status: "ready_to_review",
@@ -221,11 +229,39 @@ function readyToReview(context) {
     notes: [
       "Use student index and session state to choose the next unhandled student.",
       "bundle_zip defaults to fast_bundle when the confirmed rubric recommends it. Do not ask a separate fast-review question.",
-      "Use contact-sheet drafts only for suitable visual/video/pdf/image/mixed assignments; pure text/document assignments use review-text.md primaryFiles.",
+      "Use contact-sheet drafts only for suitable visual/video/pdf/image/mixed assignments; pure text/document assignments use assignment-review-text.md for first-pass batch review, then open individual review-text.md or original files only when needed.",
       "The create-contact-sheet command derives --mode and --slots from the confirmed rubric when video-first or multi-slot evidence is configured.",
       "Promote draftReviews only after running the dry-run readiness summary and getting user confirmation.",
     ],
   };
+}
+
+function loadRecordIfPresent(recordPath) {
+  if (!recordPath || !fs.existsSync(recordPath)) return null;
+  try {
+    return loadRecord(recordPath);
+  } catch {
+    return null;
+  }
+}
+
+function isContactSheetSuitable(reviewPriority = {}) {
+  const suitableFor = normalizeList(reviewPriority.suitableFor);
+  if (suitableFor.length === 0) return true;
+  return suitableFor.some((item) => /visual|image|video|pdf|mixed/.test(item));
+}
+
+function isAssignmentTextBundleSuitable(reviewPriority = {}) {
+  const suitableFor = normalizeList(reviewPriority.suitableFor);
+  const primaryEvidence = normalizeList(reviewPriority.primaryEvidence);
+  return suitableFor.some((item) => /text|document|mixed/.test(item))
+    || primaryEvidence.some((item) => /reviewtext|report|reflection|essay|text|document|doc/.test(item));
+}
+
+function normalizeList(values) {
+  return Array.isArray(values)
+    ? values.map((value) => String(value || "").toLowerCase().replace(/\s+/gu, "")).filter(Boolean)
+    : [];
 }
 
 function contactSheetArgsForRubric(rubricPath) {

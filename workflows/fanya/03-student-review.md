@@ -153,7 +153,7 @@ node tools/fanya/scripts/promote-draft-reviews.cjs --result-path "<result.cjs>" 
 
 Show the dry-run readiness summary to the user and promote only after confirmation.
 
-For pure image submissions, contact sheet can run immediately after bundle import. For video/PDF submissions, run `prepare-bundle-evidence.cjs` first so video frames or PDF page renders exist under each student's `evidence/` folder; then create the contact sheet from those generated images. For pure text/document submissions, do not use contact-sheet drafts by default; use `review-text.md` and `reviewLoadPlan.primaryFiles` for fast per-student review.
+For pure image submissions, contact sheet can run immediately after bundle import. For video/PDF submissions, run `prepare-bundle-evidence.cjs` first so video frames or PDF page renders exist under each student's `evidence/` folder; then create the contact sheet from those generated images. For pure text/document submissions, do not use contact-sheet drafts by default; use the assignment-level text bundle described below, then open individual primary files only when the combined text is insufficient.
 
 Video frame count is driven by `reviewPriority.representativeMediaRules.videoFrameCount` and may be 1-15. `ffprobe` is strongly recommended for video-first or high frame counts because it lets `prepare-evidence.cjs` sample frames by video duration. If `ffprobe` is unavailable, evidence preparation still runs with fixed fallback timestamps.
 
@@ -181,13 +181,34 @@ node tools/fanya/scripts/create-contact-sheet.cjs --students-dir "<students-dir>
 
 `--png-out` requires Python with Pillow. SVG and JSON remain the canonical contact-sheet artifacts.
 
+### Text / Document Batch Review
+
 For text-heavy or mixed document submissions, `prepare-evidence.cjs` may generate:
 
 ```text
 <student-dir>/evidence/review-text.md
 ```
 
-Read `review-text.md` before opening lower-priority document evidence. It is a cleaned, truncated text bundle intended to reduce repeated docx/pptx/text opening. If the assignment is pure long-form writing and the text bundle is insufficient, read the necessary original document evidence rather than relying on a contact sheet.
+Read `review-text.md` before opening lower-priority document evidence. It is a cleaned, truncated text bundle intended to reduce repeated docx/pptx/txt/PDF-text opening. PDF handling is text-first when the rubric is pure `text_document`: `pdftotext` is tried first and successful text can skip PDF page rendering. For visual, PDF-layout, or mixed visual/document assignments, keep PDF page rendering so contact sheets and layout checks still have image evidence.
+
+After preparing evidence for a text-heavy bundle assignment, build one assignment-level text file:
+
+```powershell
+node tools/fanya/scripts/build-assignment-review-text.cjs --session-path "tmp/session/fanya-current-task.json" --out "tmp/session/assignment-review-text.md" --index-out "tmp/session/assignment-review-text-index.json"
+```
+
+This combines unhandled students' `review-text.md` files in student-index order, excluding completed and skipped students by default. Use it for first-pass reading of pure text/document assignments, and for mixed document/visual assignments alongside the contact sheet. The script writes full content to `assignment-review-text.md` and only prints summary counts to stdout.
+
+For pure text/document assignments, the normal fast-bundle path is:
+
+1. Run `prepare-bundle-evidence.cjs`.
+2. Build `assignment-review-text.md`.
+3. Read the assignment-level text bundle for first-pass score/comment drafts.
+4. Open individual original files only when the text is insufficient, truncated, empty, garbled, or the score band is unclear.
+5. Store first-pass output as `draftReviews`.
+6. Run `promote-draft-reviews.cjs --dry-run`, show the readiness summary, and promote only after user confirmation.
+
+For mixed document/visual assignments, use both the assignment text bundle and the contact sheet. Text evidence should cover reports, explanations, reflections, and written analysis. Visual evidence should cover images, video frames, page layout, slides, renders, diagrams, or PDF page appearance. Do not let either artifact alone override the confirmed rubric.
 
 When preparing evidence for many bundle students at once, prefer summary output to avoid flooding chat/context with every path:
 

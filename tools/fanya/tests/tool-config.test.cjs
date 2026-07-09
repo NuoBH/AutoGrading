@@ -37,9 +37,11 @@ test("createLocalConfig writes detected tool paths", () => {
     workspaceRoot: root,
     config: {
       ffmpegPath: "",
+      ffprobePath: "",
       sevenZipPath: "",
       tarPath: "",
       pdftoppmPath: "",
+      pdftotextPath: "",
     },
   });
 
@@ -49,15 +51,17 @@ test("createLocalConfig writes detected tool paths", () => {
   assert.equal(Object.hasOwn(written, "ffmpegPath"), true);
   assert.equal(Object.hasOwn(written, "ffprobePath"), true);
   assert.equal(Object.hasOwn(written, "sevenZipPath"), true);
+  assert.equal(Object.hasOwn(written, "pdftotextPath"), true);
   for (const relativePath of WORKSPACE_DIRS) {
     assert.equal(fs.existsSync(path.join(root, relativePath)), true);
   }
 });
 
-test("resolveTools exposes optional ffprobePath", () => {
-  const tools = resolveTools({ config: { ffmpegPath: "", ffprobePath: "", sevenZipPath: "", tarPath: "", pdftoppmPath: "" } });
+test("resolveTools exposes optional ffprobePath and pdftotextPath", () => {
+  const tools = resolveTools({ config: { ffmpegPath: "", ffprobePath: "", sevenZipPath: "", tarPath: "", pdftoppmPath: "", pdftotextPath: "" } });
 
   assert.equal(Object.hasOwn(tools, "ffprobePath"), true);
+  assert.equal(Object.hasOwn(tools, "pdftotextPath"), true);
 });
 
 test("ensureWorkspaceDirs creates first-run grading folders", () => {

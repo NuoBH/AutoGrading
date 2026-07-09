@@ -213,7 +213,7 @@ test("wizard recommends bundle fast review preparation commands when ready", () 
   assert.equal(result.recommendedCommands.some((command) => command.includes("create-contact-sheet.cjs") && command.includes("--session-path")), true);
   assert.equal(result.notes.some((note) => note.includes("bundle_zip defaults to fast_bundle")), true);
   assert.equal(result.notes.some((note) => note.includes("Do not ask a separate fast-review question")), true);
-  assert.equal(result.notes.some((note) => note.includes("pure text/document assignments use review-text.md primaryFiles")), true);
+  assert.equal(result.notes.some((note) => note.includes("pure text/document assignments use assignment-review-text.md")), true);
 });
 
 test("wizard derives contact sheet video options from the confirmed rubric", () => {
@@ -233,6 +233,42 @@ test("wizard derives contact sheet video options from the confirmed rubric", () 
   assert.equal(result.status, "ready_to_review");
   assert.match(contactSheetCommand, /--mode video-first/);
   assert.match(contactSheetCommand, /--slots 8/);
+});
+
+test("wizard recommends assignment text bundle instead of contact sheet for pure text rubrics", () => {
+  const root = makeRoot();
+  const inputs = createReadyInputsWithRubricPriority(root, {
+    recommendedMode: "fast_bundle",
+    suitableFor: ["text_document"],
+    primaryEvidence: ["review-text.md"],
+  }, "bundle_zip");
+
+  const result = startReviewWizard({
+    ...inputs,
+    skippedDecision: "none",
+  });
+
+  assert.equal(result.status, "ready_to_review");
+  assert.equal(result.recommendedCommands.some((command) => command.includes("build-assignment-review-text.cjs")), true);
+  assert.equal(result.recommendedCommands.some((command) => command.includes("create-contact-sheet.cjs")), false);
+});
+
+test("wizard recommends both assignment text bundle and contact sheet for mixed document visual rubrics", () => {
+  const root = makeRoot();
+  const inputs = createReadyInputsWithRubricPriority(root, {
+    recommendedMode: "fast_bundle",
+    suitableFor: ["mixed_doc_visual"],
+    primaryEvidence: ["review-text.md", "final image"],
+  }, "bundle_zip");
+
+  const result = startReviewWizard({
+    ...inputs,
+    skippedDecision: "none",
+  });
+
+  assert.equal(result.status, "ready_to_review");
+  assert.equal(result.recommendedCommands.some((command) => command.includes("build-assignment-review-text.cjs")), true);
+  assert.equal(result.recommendedCommands.some((command) => command.includes("create-contact-sheet.cjs")), true);
 });
 
 test("wizard detects an existing session before starting a new setup", () => {

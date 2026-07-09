@@ -6,7 +6,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const { createRubricRecordFile } = require("../scripts/record-store.cjs");
-const { prepareBundleEvidence, videoFrameCountFromSession } = require("../scripts/prepare-bundle-evidence.cjs");
+const { prepareBundleEvidence, pdfRenderModeFromSession, videoFrameCountFromSession } = require("../scripts/prepare-bundle-evidence.cjs");
 const { initSession } = require("../scripts/task-session.cjs");
 
 test("prepareBundleEvidence is optional and loops students from a students directory", () => {
@@ -122,6 +122,62 @@ test("prepareBundleEvidence reads videoFrameCount from the session rubric", () =
   const session = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
 
   assert.equal(videoFrameCountFromSession(session), 12);
+});
+
+test("prepareBundleEvidence uses text-first PDF mode for pure text document rubrics", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fanya-bundle-evidence-pdf-mode-"));
+  const rubricPath = createRubricRecordFile({
+    rubricPath: path.join(root, "rubric.cjs"),
+    courseName: "Course",
+    assignmentName: "Assignment",
+    status: "confirmed",
+    reviewPriority: {
+      recommendedMode: "fast_bundle",
+      suitableFor: ["text_document"],
+      primaryEvidence: ["review-text.md"],
+    },
+  });
+  const sessionPath = path.join(root, "session.json");
+  initSession({
+    sessionPath,
+    courseName: "Course",
+    assignmentName: "Assignment",
+    localWorkIndex: 1,
+    reviewMode: "bundle_zip",
+    rubricPath,
+  });
+
+  const session = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
+
+  assert.equal(pdfRenderModeFromSession(session), "text_first");
+});
+
+test("prepareBundleEvidence keeps default PDF rendering for mixed visual document rubrics", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fanya-bundle-evidence-mixed-pdf-mode-"));
+  const rubricPath = createRubricRecordFile({
+    rubricPath: path.join(root, "rubric.cjs"),
+    courseName: "Course",
+    assignmentName: "Assignment",
+    status: "confirmed",
+    reviewPriority: {
+      recommendedMode: "fast_bundle",
+      suitableFor: ["mixed_doc_visual"],
+      primaryEvidence: ["review-text.md", "layout image"],
+    },
+  });
+  const sessionPath = path.join(root, "session.json");
+  initSession({
+    sessionPath,
+    courseName: "Course",
+    assignmentName: "Assignment",
+    localWorkIndex: 1,
+    reviewMode: "bundle_zip",
+    rubricPath,
+  });
+
+  const session = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
+
+  assert.equal(pdfRenderModeFromSession(session), undefined);
 });
 
 test("prepare-bundle-evidence CLI supports summary-only output and json-out", () => {

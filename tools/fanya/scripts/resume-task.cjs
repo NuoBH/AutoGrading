@@ -269,7 +269,7 @@ function shouldUseFastBundleBatchFirst({ session, studentCount }) {
   const rubric = safeLoadRecord(session.rubricPath);
   const reviewPriority = rubric?.reviewPriority || {};
   if (reviewPriority.recommendedMode !== "fast_bundle") return false;
-  return isContactSheetSuitable(reviewPriority);
+  return isContactSheetSuitable(reviewPriority) || isAssignmentTextBundleSuitable(reviewPriority);
 }
 
 function assignmentHasFormalReviewsOrActiveDrafts(session) {
@@ -286,6 +286,17 @@ function isContactSheetSuitable(reviewPriority = {}) {
     : [];
   if (suitableFor.length === 0) return true;
   return suitableFor.some((item) => /visual|image|video|pdf|mixed/.test(item));
+}
+
+function isAssignmentTextBundleSuitable(reviewPriority = {}) {
+  const suitableFor = Array.isArray(reviewPriority.suitableFor)
+    ? reviewPriority.suitableFor.map((item) => normalizeName(item))
+    : [];
+  const primaryEvidence = Array.isArray(reviewPriority.primaryEvidence)
+    ? reviewPriority.primaryEvidence.map((item) => normalizeName(item))
+    : [];
+  return suitableFor.some((item) => /text|document|mixed/.test(item))
+    || primaryEvidence.some((item) => /reviewtext|report|reflection|essay|text|document|doc/.test(item));
 }
 
 function safeLoadRecord(recordPath) {
@@ -463,13 +474,26 @@ function nextActionsForReadyState(state, { fastBundleBatchFirst = false } = {}) 
     const studentsDir = state.studentsDir || "<students-dir>";
     const sessionPath = state.sessionPath || "tmp/session/fanya-current-task.json";
     const rubricPath = state.rubricPath || "<rubric.cjs>";
+    const rubric = safeLoadRecord(rubricPath);
+    const reviewPriority = rubric?.reviewPriority || {};
+    const useContactSheet = isContactSheetSuitable(reviewPriority);
+    const useAssignmentText = isAssignmentTextBundleSuitable(reviewPriority);
     const contactSheetArgs = contactSheetArgsForRubric(rubricPath);
-    return [
+    const actions = [
       `Run prepare-bundle-evidence.cjs "${studentsDir}" --session-path "${sessionPath}" --summary-only --json-out "${path.join(workDir, "prepared-bundle-evidence.json")}".`,
-      `Run create-contact-sheet.cjs --students-dir "${studentsDir}" --session-path "${sessionPath}" --out "${path.join(workDir, "contact-sheet.svg")}" --map-out "${path.join(workDir, "contact-sheet.json")}" --notes-out "tmp/session/contact-sheet-review-notes.json" --rubric-path "${rubricPath}"${contactSheetArgs ? ` ${contactSheetArgs}` : ""}.`,
-      "Use the contact sheet to draft score/comment JSON for suitable students; record it with record-draft-reviews.cjs.",
-      "Run promote-draft-reviews.cjs --dry-run and show the readiness summary to the user before promotion.",
     ];
+    if (useAssignmentText) {
+      actions.push(`Run build-assignment-review-text.cjs --session-path "${sessionPath}" --out "tmp/session/assignment-review-text.md" --index-out "tmp/session/assignment-review-text-index.json".`);
+      actions.push("Use assignment-review-text.md for text-heavy evidence; keep comments student-facing and evidence-based.");
+    }
+    if (useContactSheet) {
+      actions.push(`Run create-contact-sheet.cjs --students-dir "${studentsDir}" --session-path "${sessionPath}" --out "${path.join(workDir, "contact-sheet.svg")}" --map-out "${path.join(workDir, "contact-sheet.json")}" --notes-out "tmp/session/contact-sheet-review-notes.json" --rubric-path "${rubricPath}"${contactSheetArgs ? ` ${contactSheetArgs}` : ""}.`);
+      actions.push("Use the contact sheet to draft score/comment JSON for suitable students; record it with record-draft-reviews.cjs.");
+    }
+    actions.push(
+      "Run promote-draft-reviews.cjs --dry-run and show the readiness summary to the user before promotion.",
+    );
+    return actions;
   }
   if (state.reviewMode === "web_download" && state.needsBrowserReviewPage) {
     return [

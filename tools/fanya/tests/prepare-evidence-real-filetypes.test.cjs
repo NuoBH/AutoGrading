@@ -122,10 +122,30 @@ test("prepareEvidence renders a real multi-page PDF when pdftoppm is available",
   createPdf(path.join(studentDir, "report.pdf"), 4);
 
   const result = prepareEvidence(studentDir, { tools });
+  const assets = readAssets(studentDir);
+  const pageImages = result.generatedEvidence.filter((file) => file.endsWith(".png"));
 
   assert.equal(result.evidenceComplete, true);
-  assert.equal(result.generatedEvidence.length, 3);
-  assert.equal(result.generatedEvidence.every((file) => fs.existsSync(file) && file.endsWith(".png")), true);
+  assert.equal(pageImages.length, 3);
+  assert.equal(pageImages.every((file) => fs.existsSync(file)), true);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_text"), true);
+  assert.equal(assets.evidenceItems.filter((item) => item.kind === "pdf_page").length, 3);
+});
+
+test("prepareEvidence extracts text from a real selectable PDF when pdftotext is available", { skip: !resolveTools().pdftotextPath }, () => {
+  const tools = resolveTools();
+  const studentDir = makeStudentDir();
+  createPdf(path.join(studentDir, "essay.pdf"), 2);
+
+  const result = prepareEvidence(studentDir, { tools, pdfRenderMode: "text_first" });
+  const assets = readAssets(studentDir);
+  const reviewText = fs.readFileSync(path.join(studentDir, "evidence", assets.reviewText), "utf8");
+
+  assert.equal(result.evidenceComplete, true);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_text"), true);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_page"), false);
+  assert.match(reviewText, /Page 1/);
+  assert.match(reviewText, /Page 2/);
 });
 
 test("prepareEvidence marks PDF manual review when pdftoppm is unavailable", () => {

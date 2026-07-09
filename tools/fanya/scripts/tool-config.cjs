@@ -27,6 +27,20 @@ const COMMON_PATHS = {
       "pdftoppm.exe",
     ),
   ],
+  pdftotextPath: [
+    path.join(
+      process.env.USERPROFILE || "",
+      ".cache",
+      "codex-runtimes",
+      "codex-primary-runtime",
+      "dependencies",
+      "native",
+      "poppler",
+      "Library",
+      "bin",
+      "pdftotext.exe",
+    ),
+  ],
 };
 
 const WORKSPACE_DIRS = [
@@ -72,6 +86,7 @@ function resolveTools(options = {}) {
     sevenZipPath: resolveCommand("7z", "sevenZipPath", { ...options, config }),
     tarPath: resolveCommand("tar", "tarPath", { ...options, config }),
     pdftoppmPath: resolveCommand("pdftoppm", "pdftoppmPath", { ...options, config }),
+    pdftotextPath: resolveCommand("pdftotext", "pdftotextPath", { ...options, config }),
     configPath: options.configPath || LOCAL_CONFIG_PATH,
     exampleConfigPath: EXAMPLE_CONFIG_PATH,
   };
@@ -87,6 +102,7 @@ function createLocalConfig(options = {}) {
     sevenZipPath: tools.sevenZipPath,
     tarPath: tools.tarPath,
     pdftoppmPath: tools.pdftoppmPath,
+    pdftotextPath: tools.pdftotextPath,
   };
   fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
   const workspaceRoot = options.workspaceRoot || process.cwd();

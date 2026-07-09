@@ -1,5 +1,6 @@
 {
   "ffmpegPath": "",
   "sevenZipPath": "",
-  "pdftoppmPath": ""
+  "pdftoppmPath": "",
+  "pdftotextPath": ""
 }

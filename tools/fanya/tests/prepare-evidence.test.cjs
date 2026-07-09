@@ -196,3 +196,70 @@ test("buildReviewTextBundle truncates long text sources", () => {
   assert.equal(result.relativePath, "review-text.md");
   assert.equal(fs.readFileSync(result.path, "utf8").includes("[truncated for review]"), true);
 });
+
+test("prepareEvidence extracts selectable PDF text into review text", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fanya-pdf-text-"));
+  const studentDir = path.join(root, "local-001-StudentA");
+  fs.mkdirSync(studentDir, { recursive: true });
+  fs.writeFileSync(path.join(studentDir, "report.pdf"), "fake pdf");
+  const pdftotextPath = ({ outPath }) => {
+    fs.writeFileSync(outPath, "PDF reflection text for review.", "utf8");
+  };
+
+  prepareEvidence(studentDir, {
+    tools: { ffmpegPath: "", pdftoppmPath: "", pdftotextPath, sevenZipPath: "", tarPath: "" },
+    pdfRenderMode: "text_first",
+  });
+
+  const evidenceDir = path.join(studentDir, "evidence");
+  const assets = JSON.parse(fs.readFileSync(path.join(evidenceDir, "review-assets.json"), "utf8"));
+  const reviewText = fs.readFileSync(path.join(evidenceDir, "review-text.md"), "utf8");
+
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_text" && item.sourceKind === "pdf"), true);
+  assert.equal(assets.textBundleComplete, true);
+  assert.match(reviewText, /PDF reflection text for review/);
+});
+
+test("prepareEvidence can skip PDF page rendering for text-first document review", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fanya-pdf-text-first-"));
+  const studentDir = path.join(root, "local-001-StudentA");
+  fs.mkdirSync(studentDir, { recursive: true });
+  fs.writeFileSync(path.join(studentDir, "essay.pdf"), "fake pdf");
+  const pdftotextPath = ({ outPath }) => {
+    fs.writeFileSync(outPath, "Essay text extracted from PDF.", "utf8");
+  };
+  const pdftoppmPath = () => {
+    throw new Error("pdftoppm should not run in text_first mode when text extraction succeeds");
+  };
+
+  const result = prepareEvidence(studentDir, {
+    tools: { ffmpegPath: "", pdftoppmPath, pdftotextPath, sevenZipPath: "", tarPath: "" },
+    pdfRenderMode: "text_first",
+  });
+  const assets = JSON.parse(fs.readFileSync(path.join(studentDir, "evidence", "review-assets.json"), "utf8"));
+
+  assert.equal(result.evidenceComplete, true);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_page"), false);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_text"), true);
+});
+
+test("prepareEvidence keeps PDF page rendering by default even when text extraction succeeds", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fanya-pdf-default-render-"));
+  const studentDir = path.join(root, "local-001-StudentA");
+  fs.mkdirSync(studentDir, { recursive: true });
+  fs.writeFileSync(path.join(studentDir, "visual-report.pdf"), "fake pdf");
+  const pdftotextPath = ({ outPath }) => {
+    fs.writeFileSync(outPath, "Visual report text.", "utf8");
+  };
+  const pdftoppmPath = ({ prefix }) => {
+    fs.writeFileSync(`${prefix}-1.png`, "rendered page");
+  };
+
+  prepareEvidence(studentDir, {
+    tools: { ffmpegPath: "", pdftoppmPath, pdftotextPath, sevenZipPath: "", tarPath: "" },
+  });
+  const assets = JSON.parse(fs.readFileSync(path.join(studentDir, "evidence", "review-assets.json"), "utf8"));
+
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_text"), true);
+  assert.equal(assets.evidenceItems.some((item) => item.kind === "pdf_page"), true);
+});

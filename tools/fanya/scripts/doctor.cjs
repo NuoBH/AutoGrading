@@ -69,12 +69,13 @@ function runDoctor(options = {}) {
     recommendedStatusLine("7z", tools.sevenZipPath, "install 7-Zip or set sevenZipPath in tools/fanya/config.local.json"),
     statusLine("tar", tools.tarPath, "Windows tar should be available; otherwise install tar or use 7-Zip"),
     recommendedStatusLine("pdftoppm", tools.pdftoppmPath, "install Poppler or set pdftoppmPath in tools/fanya/config.local.json"),
+    recommendedStatusLine("pdftotext", tools.pdftotextPath, "install Poppler or set pdftotextPath in tools/fanya/config.local.json for PDF text extraction"),
     recommendedStatusLine("python", pythonCommand, "install Python 3 for PNG contact sheets and helper scripts"),
     recommendedStatusLine("python Pillow", hasPillow ? "available" : "", "install with: python -m pip install Pillow"),
     `${fs.existsSync(LOCAL_CONFIG_PATH) ? "OK" : "INFO"} config.local.json: ${LOCAL_CONFIG_PATH}`,
     `INFO config example: ${EXAMPLE_CONFIG_PATH}`,
     ...WORKSPACE_DIRS.map((dir) => `${checkDir(dir) ? "OK" : "MISSING"} ${dir} directory: ${path.resolve(dir)}`),
-    "INFO impact: missing REQUIRED tools blocks normal workflow startup; missing ffmpeg/ffprobe limits video evidence; missing pdftoppm limits PDF rendering; missing Pillow limits PNG contact-sheet previews.",
+    "INFO impact: missing REQUIRED tools blocks normal workflow startup; missing ffmpeg/ffprobe limits video evidence; missing pdftoppm limits PDF rendering; missing pdftotext limits PDF text extraction; missing Pillow limits PNG contact-sheet previews.",
   ];
   return lines;
 }

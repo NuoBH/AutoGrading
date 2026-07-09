@@ -14,6 +14,7 @@ function prepareBundleEvidence(studentsDir, options = {}) {
   const evidenceOptions = {
     ...options,
     videoFrameCount: options.videoFrameCount || videoFrameCountFromSession(session),
+    pdfRenderMode: options.pdfRenderMode || pdfRenderModeFromSession(session),
   };
 
   const skippedStudents = entries
@@ -49,6 +50,31 @@ function videoFrameCountFromSession(session) {
   } catch {
     return undefined;
   }
+}
+
+function pdfRenderModeFromSession(session) {
+  if (!session?.rubricPath || !fs.existsSync(session.rubricPath)) return undefined;
+  try {
+    const rubric = loadRecord(session.rubricPath);
+    const priority = rubric.reviewPriority || {};
+    if (priority.pdfRenderMode) return priority.pdfRenderMode;
+    if (priority.pdfHandling?.renderMode) return priority.pdfHandling.renderMode;
+    return shouldUseTextFirstPdf(priority) ? "text_first" : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function shouldUseTextFirstPdf(priority = {}) {
+  const suitableFor = normalizeList(priority.suitableFor);
+  if (!suitableFor.includes("text_document")) return false;
+  return !suitableFor.some((item) => /visual|image|video|pdf|mixed/.test(item));
+}
+
+function normalizeList(values) {
+  return Array.isArray(values)
+    ? values.map((value) => String(value || "").toLowerCase().trim()).filter(Boolean)
+    : [];
 }
 
 function bundleEvidenceSummary({ students = [], skippedStudents = [] }) {
@@ -116,6 +142,9 @@ function main(argv) {
     } else if (argv[index] === "--video-frame-count") {
       options.videoFrameCount = argv[index + 1];
       index += 1;
+    } else if (argv[index] === "--pdf-render-mode") {
+      options.pdfRenderMode = argv[index + 1];
+      index += 1;
     }
   }
   const result = prepareBundleEvidence(studentsDir, options);
@@ -144,5 +173,6 @@ module.exports = {
   bundleEvidenceSummary,
   prepareBundleEvidence,
   entriesByStudentIndex,
+  pdfRenderModeFromSession,
   videoFrameCountFromSession,
 };

@@ -164,7 +164,8 @@ test("resumeTask does not recommend contact sheet for pure text fast-bundle assi
 
   assert.equal(result.status, "resume_ready");
   assert.equal(result.nextActions.some((action) => action.includes("create-contact-sheet.cjs")), false);
-  assert.equal(result.nextActions.some((action) => action.includes("prepare-evidence.cjs")), true);
+  assert.equal(result.nextActions.some((action) => action.includes("build-assignment-review-text.cjs")), true);
+  assert.equal(result.nextActions.some((action) => action.includes("prepare-evidence.cjs")), false);
 });
 
 test("resumeTask returns resume_ready for a valid bundle session", () => {

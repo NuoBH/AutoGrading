@@ -69,7 +69,7 @@ reviewPriority: {
   primaryEvidence: [
     "Use assignment-specific deliverables from the confirmed rubric first.",
     "For visual submissions, inspect representative final images, layout boards, posters, PDF previews, or video frames.",
-    "For document-heavy submissions, read evidence/review-text.md before opening lower-priority files."
+    "For document-heavy bundle submissions, read tmp/session/assignment-review-text.md first when available; then open the student's evidence/review-text.md or original files only when the combined text is insufficient."
   ],
   secondaryEvidence: [
     "Open source archives, full slide decks, textures, or extra support files only when the score band is unclear."
@@ -85,7 +85,9 @@ reviewPriority: {
 }
 ```
 
-Bundle mode defaults to `fast_bundle` when the rubric recommends it. If the user asks for one-by-one full review, still inspect high-priority evidence first and stop once a fair score band is justified. Do not assume every assignment has PPT, reports, layout boards, or images; the priority list must follow the actual assignment deliverables.
+Bundle mode defaults to `fast_bundle` when the rubric recommends it. If the user asks for one-by-one full review, still inspect high-priority evidence first and stop once a fair score band is justified. Do not assume every assignment has PPT, reports, layout boards, text documents, or images; the priority list must follow the actual assignment deliverables.
+
+For pure text/document assignments, set `suitableFor` to include `text_document` and make the rubric clear that the assignment-level text bundle is the first-pass evidence. Do not recommend contact-sheet drafts unless page layout, diagrams, images, or PDF appearance are part of the grade. For mixed document/visual assignments, use `mixed_doc_visual` and describe which written evidence and which visual evidence should be checked.
 
 `representativeMediaTerms` is assignment-specific. Fill it from the assignment requirements or user instructions when useful. Do not paste the system fallback default representative terms into every rubric.
 

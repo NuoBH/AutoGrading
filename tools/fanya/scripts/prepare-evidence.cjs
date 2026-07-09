@@ -142,7 +142,7 @@ function processFile(filePath, studentDir, evidenceDir, tools, options = {}) {
       })],
     };
   }
-  if (ext === ".pdf") return processPdf(filePath, evidenceDir, tools);
+  if (ext === ".pdf") return processPdf(filePath, evidenceDir, tools, options);
   if (ext === ".docx" || ext === ".pptx") return processOffice(filePath, evidenceDir, tools);
   if (isPlainTextExtension(ext)) return processPlainText(filePath, evidenceDir);
   if (kind === "archive") return processArchive(filePath, studentDir, evidenceDir, tools, options);
@@ -213,31 +213,76 @@ function processVideo(filePath, evidenceDir, tools, options = {}) {
     : manualReview(filePath, "video", "ffmpeg could not extract three frames");
 }
 
-function processPdf(filePath, evidenceDir, tools) {
+function processPdf(filePath, evidenceDir, tools, options = {}) {
   const base = baseName(filePath);
+  const pdfTextPath = extractPdfText(filePath, evidenceDir, tools);
+  const shouldRenderPages = shouldRenderPdfPages({ pdfTextPath, options });
+  const textEvidence = pdfTextPath ? [pdfTextPath] : [];
+  const textItems = textEvidence.map((outputPath) => evidenceItem({
+    evidenceDir,
+    outputPath,
+    sourceFile: filePath,
+    kind: "pdf_text",
+    sourceKind: "pdf",
+    generated: true,
+  }));
+
+  if (!shouldRenderPages && pdfTextPath) {
+    return {
+      source: filePath,
+      filename: path.basename(filePath),
+      kind: "document",
+      status: "ok",
+      evidence: textEvidence,
+      externalViewable: [],
+      evidenceItems: textItems,
+    };
+  }
+
   const existing = listMatchingEvidence(evidenceDir, base);
   if (existing.length >= 1) {
-    return okItem(filePath, "document", existing, {
+    const pageResult = okItem(filePath, "document", existing, {
       itemKind: "pdf_page",
       sourceKind: "pdf",
       indexField: "pageIndex",
     });
+    return {
+      ...pageResult,
+      evidence: [...textEvidence, ...pageResult.evidence],
+      evidenceItems: [...textItems, ...pageResult.evidenceItems],
+    };
   }
 
-  if (!tools.pdftoppmPath) return manualReview(filePath, "document", "pdftoppm not found");
+  if (!tools.pdftoppmPath) {
+    if (pdfTextPath && !shouldRenderPages) {
+      return {
+        source: filePath,
+        filename: path.basename(filePath),
+        kind: "document",
+        status: "ok",
+        evidence: textEvidence,
+        externalViewable: [],
+        evidenceItems: textItems,
+      };
+    }
+    return manualReview(filePath, "document", "pdftoppm not found");
+  }
 
   const prefix = path.join(evidenceDir, `${base}_page`);
   try {
-    execFileSync(tools.pdftoppmPath, [
-      "-png",
-      "-f",
-      "1",
-      "-l",
-      String(MAX_PDF_PAGES),
-      filePath,
-      prefix,
-    ], { stdio: "pipe" });
+    runPdftoppm({ filePath, prefix, tools });
   } catch (error) {
+    if (pdfTextPath && !shouldRenderPages) {
+      return {
+        source: filePath,
+        filename: path.basename(filePath),
+        kind: "document",
+        status: "ok",
+        evidence: textEvidence,
+        externalViewable: [],
+        evidenceItems: textItems,
+      };
+    }
     return manualReview(filePath, "document", error.message);
   }
 
@@ -251,13 +296,72 @@ function processPdf(filePath, evidenceDir, tools) {
     return to;
   }).filter(isNonEmptyFile);
 
-  return evidence.length >= 1
-    ? okItem(filePath, "document", evidence, {
+  if (evidence.length >= 1) {
+    const pageResult = okItem(filePath, "document", evidence, {
       itemKind: "pdf_page",
       sourceKind: "pdf",
       indexField: "pageIndex",
-    })
-    : manualReview(filePath, "document", "pdftoppm produced no images");
+    });
+    return {
+      ...pageResult,
+      evidence: [...textEvidence, ...pageResult.evidence],
+      evidenceItems: [...textItems, ...pageResult.evidenceItems],
+    };
+  }
+
+  if (pdfTextPath && !shouldRenderPages) {
+    return {
+      source: filePath,
+      filename: path.basename(filePath),
+      kind: "document",
+      status: "ok",
+      evidence: textEvidence,
+      externalViewable: [],
+      evidenceItems: textItems,
+    };
+  }
+  return manualReview(filePath, "document", "pdftoppm produced no images");
+}
+
+function extractPdfText(filePath, evidenceDir, tools = {}) {
+  if (!tools.pdftotextPath) return "";
+  const outPath = path.join(evidenceDir, `${baseName(filePath)}_text.txt`);
+  try {
+    runPdftotext({ filePath, outPath, tools });
+    return isNonEmptyFile(outPath) && cleanReviewText(readTextFile(outPath)) ? outPath : "";
+  } catch {
+    return "";
+  }
+}
+
+function runPdftotext({ filePath, outPath, tools }) {
+  if (typeof tools.pdftotextPath === "function") {
+    tools.pdftotextPath({ filePath, outPath });
+    return;
+  }
+  execFileSync(tools.pdftotextPath, [filePath, outPath], { stdio: "pipe" });
+}
+
+function runPdftoppm({ filePath, prefix, tools }) {
+  if (typeof tools.pdftoppmPath === "function") {
+    tools.pdftoppmPath({ filePath, prefix, maxPages: MAX_PDF_PAGES });
+    return;
+  }
+  execFileSync(tools.pdftoppmPath, [
+    "-png",
+    "-f",
+    "1",
+    "-l",
+    String(MAX_PDF_PAGES),
+    filePath,
+    prefix,
+  ], { stdio: "pipe" });
+}
+
+function shouldRenderPdfPages({ pdfTextPath = "", options = {} }) {
+  if (options.renderPdfPages === true) return true;
+  if (options.pdfRenderMode === "text_first" && pdfTextPath) return false;
+  return true;
 }
 
 function processOffice(filePath, evidenceDir, tools) {
@@ -325,6 +429,7 @@ function isEvidenceComplete(studentDir, assets, options = {}) {
       const sampleSeconds = videoSampleSeconds({ videoFrameCount: options.videoFrameCount });
       if (!allNonEmpty(sampleSeconds.map((_, index) => numberedEvidencePath(evidenceDir, base, index + 1)))) return false;
     } else if (ext === ".pdf") {
+      if (options.pdfRenderMode === "text_first" && pdfTextEvidenceExists(evidenceDir, base)) continue;
       if (listMatchingEvidence(evidenceDir, base).length < 1) return false;
     } else if (ext === ".docx" || ext === ".pptx") {
       if (!officeEvidenceExists(evidenceDir, base)) return false;
@@ -333,6 +438,10 @@ function isEvidenceComplete(studentDir, assets, options = {}) {
     }
   }
   return true;
+}
+
+function pdfTextEvidenceExists(evidenceDir, base) {
+  return isNonEmptyFile(path.join(evidenceDir, `${base}_text.txt`));
 }
 
 function videoSampleSeconds(input = {}) {

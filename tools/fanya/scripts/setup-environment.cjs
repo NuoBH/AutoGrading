@@ -32,7 +32,7 @@ function installGuide() {
     "Recommended:",
     "- ffmpeg + ffprobe: install FFmpeg and ensure ffmpeg/ffprobe are on PATH.",
     "- 7-Zip: install 7-Zip and ensure 7z is on PATH, or keep the default Program Files install path.",
-    "- Poppler pdftoppm: install Poppler, or set pdftoppmPath in tools/fanya/config.local.json.",
+    "- Poppler pdftoppm + pdftotext: install Poppler, or set pdftoppmPath/pdftotextPath in tools/fanya/config.local.json.",
     "- Python 3 + Pillow: run `python -m pip install Pillow` or use this script with `--install-python-packages`.",
     "Windows winget examples, run manually only if you trust the source:",
     "- winget install OpenJS.NodeJS.LTS",

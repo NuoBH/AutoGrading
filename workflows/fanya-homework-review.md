@@ -77,7 +77,7 @@ node tools/fanya/scripts/create-result.cjs --course "<course>" --assignment "<as
 7. In `bundle_zip`, ask whether to read the website roster and mark already-reviewed students. If the user says no, record that decision with `task-session.cjs mark-completed-sync-decision --decision no`.
 8. Ask whether any students should be skipped, match names to ids, and write `skipped` result records.
 9. Initialize review state from the result `.cjs` record and selected mode.
-10. Review students one by one. For bundle fast review, including video-first and multi-slot contact sheets, follow [03-student-review.md](fanya/03-student-review.md) after the wizard reaches `ready_to_review` or resume reaches `resume_ready`. Wizard/resume commands derive contact-sheet `--mode` and `--slots` from the confirmed rubric when configured.
+10. Review students. For bundle fast review, including video-first contact sheets, multi-slot contact sheets, and assignment-level text bundles, follow [03-student-review.md](fanya/03-student-review.md) after the wizard reaches `ready_to_review` or resume reaches `resume_ready`. Wizard/resume commands derive contact-sheet `--mode` / `--slots` and text-bundle suggestions from the confirmed rubric when configured.
 11. Maintain output records. See [04-output-files.md](fanya/04-output-files.md).
 12. Follow safety rules. See [05-safety-rules.md](fanya/05-safety-rules.md).
 
