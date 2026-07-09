@@ -1,20 +1,23 @@
-# 泛雅 / 超星作业自动评阅助手
+# 泛雅 / 超星作业评阅助手
 
-面向高校教师、助教和课程负责人使用的本地作业批阅工作台。
+把泛雅 / 超星里的图片、视频、PDF、PPT、报告和压缩包作业，整理成本地可批阅、可检查、可导出 Excel 的评阅流程。
 
-它可以帮助你从泛雅 / 超星作业压缩包或网页提交中整理学生材料，自动抽取视频帧、PDF 页面和文档内容，生成视觉作业总览图，辅助完成建议评分、学生评语，并最终导出 Excel 成绩表。
+它特别适合艺术、设计、影视、动画、数字媒体、三维、视觉传达等课程中的视觉类、视频类和混合作业。工具可以帮你整理学生材料、抽取视频帧、截取 PDF 页面、提取文档内容、生成作品总览图，并辅助写出建议分数和学生可读评语。
 
-> 本工具只在本地生成评阅记录和表格，不会在泛雅 / 超星网页上提交、保存、发布或退回成绩。所有结果都需要由使用者确认后再使用。
+> 本工具只在本地生成评阅记录和表格，不会在泛雅 / 超星网页上提交、保存、发布或退回成绩。评分标准和最终结果都需要由使用者确认。
 
 ![泛雅作业评阅助手展示图](assets/readme-hero.png)
 
-## 快速查看示例
+## 先看效果
 
-如果你想先判断这个工具是否适合自己的课程，可以先看：
+如果你想先判断这个工具是否适合自己的课程，可以先看一次虚构数据示例：
 
-- [Demo 流程示例](docs/demo.md)：用虚构数据展示一次压缩包批阅会产生什么。
-- [常见问题](docs/faq.md)：解释隐私、安全、是否会自动提交成绩、适合哪些作业等问题。
-- [推广文案草稿](docs/promotion-copy.md)：如果要介绍给同事、课程组或教学发展相关渠道，可以从这里改。
+- [从作业压缩包到 Excel：完整示例](docs/demo.md)
+- [常见问题](docs/faq.md)
+
+![Before After 对比](assets/demo/before-after.png)
+
+![本地评阅流程](assets/demo/workflow-overview.png)
 
 ## 适合谁使用
 
@@ -117,7 +120,7 @@ node tools/fanya/scripts/setup-environment.cjs --install-python-packages
 系统软件如 Node.js、Chrome、browser-act、ffmpeg、7-Zip、Poppler 不会被脚本自动静默安装。请按 `setup-environment.cjs` 打印的提示手动安装，或让 agent 在你确认后再执行安装命令。
 
 
-## 获取这个Repo
+## 获取这个项目
 
 ### 方式一：使用 Git 克隆
 
@@ -384,11 +387,11 @@ tmp/session/
 
 1. 先根据评分标准挑出最重要的材料。
 2. 生成作品总览图或重点文本。
-3. 写第一轮草稿评阅，即 `draftReviews`。
+3. 写第一轮草稿评阅，用来先检查分数分布和评语质量。
 4. 草稿评语也必须是学生可见的正式语气，不能出现“草稿”“复核”“当前分数”“正式评分应”等内部流程话术。
 5. 对异常、边界分、高分候选、低分候选再补看材料。
-6. 工具先做一次转正式预检查，即 dry-run，并给出检查摘要。
-7. 用户确认后，草稿才会转为正式评阅记录，即 final reviews。
+6. 工具先做一次转正式预检查，并给出检查摘要。
+7. 用户确认后，草稿才会转为正式评阅记录。
 
 这样可以在保证基本公平和准确的前提下，减少大量重复打开文件的时间。
 
@@ -435,9 +438,9 @@ tmp/session/
 2. 已确认评阅模式、评分标准、评阅记录和学生名单；
 3. 评分标准已经由用户确认；
 4. 学生名单来自真实压缩包或真实网页列表；
-5. 没有使用 sample / placeholder 名单；
+5. 没有使用示例名单、占位名单或手写假名单；
 6. 已确认是否有不评阅的学生；
-7. 向导状态到达允许评阅的状态，例如 `ready_to_review`。
+7. 向导状态已经明确允许开始评阅。
 
 如果 agent 在没有完成这些步骤前就想直接评学生、生成总览图或写结果，请让它停下，重新从：
 
@@ -459,9 +462,9 @@ tmp/session/
 
 - 压缩包批阅模式：学生名单来自解压后的学生文件夹；
 - 网页批阅模式：学生名单来自网页作业批阅列表；
-- 学生名单里的“导入时状态”，即 `statusAtImport`，只是当时看到的网页或压缩包状态，不代表最终评阅进度；
+- 学生名单里的“导入时状态”只是当时看到的网页或压缩包状态，不代表最终评阅进度；
 - 最终谁已评、谁跳过、谁需要人工复查，以 `result/` 里的评阅记录和当前任务进度为准；
-- 不能用 sample、placeholder 或手写假名单进入正式评阅。
+- 不能用示例名单、占位名单或手写假名单进入正式评阅。
 
 ## 评阅完成后怎么清理
 
@@ -495,7 +498,3 @@ workflows/fanya-homework-review.md
 ```powershell
 node --test .\tools\fanya\tests\*.test.cjs
 ```
-
-## English Summary
-
-This is a local Fanya / Chaoxing homework review assistant for teachers and teaching assistants. It is designed for reviewing large batches of student submissions, especially visual, design, media, video, PDF, and mixed-file assignments. It prepares local review records, helps generate scores and comments, exports Excel summaries, and must not submit grades on the website.
