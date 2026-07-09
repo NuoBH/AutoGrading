@@ -49,7 +49,7 @@ example-course-assignment.zip
 
 ## 评阅过程
 
-1. 在 Codex / agent 中输入：
+1. 在 Codex 或其他本地 AI 助手中输入：
 
    ```text
    开始泛雅评阅
